@@ -129,11 +129,13 @@ func TestRedirectURI(t *testing.T) {
 }
 
 func TestJWT(t *testing.T) {
-	println(CreateJWT(
+	token, err := CreateJWT(
 		"Zjc0MWU0N2MtODkzNS00ZWNmLWEwNmYtY2M1MGMxNGQ1YmQ4",
 		"YzllYTE5NDQtNDMwMC00YTdkLWFiM2MtNTg0Y2ZkOThjYTZkMGIyNWVlNDAtNGJiMC0xMWU0LWI2NGEtYjlmMmFkYTdjOTI3",
 		"student1",
 		[]string{"player.runtime.read", "player.runtime.write"},
 		50,
-	))
+	)
+	println(token)
+	panicOnError(t, err)
 }

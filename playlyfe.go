@@ -2,6 +2,7 @@ package playlyfe
 
 import (
 	"encoding/json"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/parnurzeal/gorequest"
 	"net/url"
 	"strings"
@@ -89,10 +90,6 @@ func NewCodeV2(client_id, client_secret, redirect_uri string, load Load, store S
 
 func NewCodeV1(client_id, client_secret, redirect_uri string, load Load, store Store) *Playlyfe {
 	return New(client_id, client_secret, "code", "v1", redirect_uri, load, store)
-}
-
-func CreateJWT(client_id, client_secret, player_id string, scopes []string, expiry uint64) string {
-	return "JWT"
 }
 
 func (self *Playlyfe) checkPlError(body string) error {
@@ -239,4 +236,13 @@ func (self *Playlyfe) GetLoginUrl() string {
 
 func (self *Playlyfe) GetLogoutUrl() string {
 	return ""
+}
+
+func CreateJWT(client_id, client_secret, player_id string, scopes []string, expiry time.Duration) (string, error) {
+	token := jwt.New(jwt.SigningMethodHS256)
+	token.Claims["player_id"] = player_id
+	token.Claims["scopes"] = scopes
+	token.Claims["exp"] = time.Now().Add(time.Second * expiry).Unix()
+	tokenString, err := token.SignedString([]byte(client_secret))
+	return client_id + ":" + tokenString, err
 }
