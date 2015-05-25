@@ -35,11 +35,16 @@ To get started create a new playlyfe object using client credentials flow and th
 ```go
 import "github.com/playlyfe/playlyfe-go-sdk"
 
-func main{ 
-    pl := playlyfe.NewClientV2("Your client id", "Your client secret", null);
-    pl.get("/runtime/player", playlyfe.H{"player_id": "johny"});  // To get player profile
-    pl.get("/runtime/processes", playlyfe.H{"player_id": "johny"}); // To get all available processes
-    playlyfe.post("/runtime/processes", playlyfe.H{"player_id": "johny"}, struct{});
+type Player struct {
+    ID string `json:"id"`
+    Alias string `json:"alias"`
+}
+
+var johny Player
+
+func main() { 
+    pl := playlyfe.NewClientV2("Your client id", "Your client secret", nil, nil)
+    err: = pl.Get("/runtime/player", playlyfe.H{"player_id": "johny"}, johny)  // To get player profile
 }
 ```
 # Documentation
@@ -48,16 +53,24 @@ You can initiate a client by giving the client_id and client_secret params
 ```go
 import "github.com/playlyfe/playlyfe-go-sdk"
 
-pl := playlyfe.NewClientV2("Your client id", "Your client secret", null);
+pl := playlyfe.NewClientV2("Your client id", "Your client secret", nil, nil)
 ```
 ###2. Authorization Code Flow
 ```go
 import "github.com/playlyfe/playlyfe-go-sdk"
 
-pl := playlyfe.NewCodeV2("Your client id", "Your client secret", null);
+pl := playlyfe.NewCodeV2("Your client id", "Your client secret", "redirect_uri", nil, nil)
 ```
 In development the sdk caches the access token in memory so you don"t need to  the persist access token object. But in production it is highly recommended to persist the token to a database. It is very simple and easy to do it with redis. You can see the test cases for more examples.
-You need to return a HashMap<String, Object> which has the keys access_token and expires_at.
+
+In production you need to pass the Load and Store functions whose signature is like this,
+load func() (token string, expires_at int64) {
+    println("Loading from redis")
+    return "", 50
+},
+store func(token string, expires_at int64) {
+    println("Storing to redis")
+}
 ## 3. Custom Login Flow using JWT(JSON Web Token)
 ```go
 import "github.com/playlyfe/playlyfe-go-sdk"
@@ -66,7 +79,7 @@ token := playlyfe.createJWT("your client_id", "your client_secret",
     "player_id", // The player id associated with your user
     []string{"player.runtime.read", "player.runtime.write"}, // The scopes the player has access to
     3600; // 1 hour expiry Time
-);
+)
 ```
 This is used to create jwt token which can be created when your user is authenticated. This token can then be sent to the frontend and or stored in your session. With this token the user can directly send requests to the Playlyfe API as the player.
 
