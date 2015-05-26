@@ -9,7 +9,6 @@ For a complete API Reference checkout [Playlyfe Developers](https://dev.playlyfe
 
 Install
 ----------
-if you are using gradle then
 ```sh
 go get github.com/playlyfe/playlyfe-go-sdk
 ```
@@ -64,6 +63,7 @@ pl := playlyfe.NewCodeV2("Your client id", "Your client secret", "redirect_uri",
 In development the sdk caches the access token in memory so you don"t need to  the persist access token object. But in production it is highly recommended to persist the token to a database. It is very simple and easy to do it with redis. You can see the test cases for more examples.
 
 In production you need to pass the Load and Store functions whose signature is like this,
+```go
 load func() (token string, expires_at int64) {
     println("Loading from redis")
     return "", 50
@@ -71,6 +71,7 @@ load func() (token string, expires_at int64) {
 store func(token string, expires_at int64) {
     println("Storing to redis")
 }
+```
 ## 3. Custom Login Flow using JWT(JSON Web Token)
 ```go
 import "github.com/playlyfe/playlyfe-go-sdk"
@@ -89,7 +90,7 @@ This is used to create jwt token which can be created when your user is authenti
 error api("GET", // The request method can be GET/POST/PUT/PATCH/DELETE
     "", // The api route to get data from
     playlyfe.H{}, // The query params that you want to send to the route
-    Struct{} ,// The data you want to post to the api
+    struct{} ,// The data you want to post to the api
     result interface{}, // The unmarshalled data
     false // Whether you want the response to be in raw string form or json
 )
@@ -105,15 +106,15 @@ error Get("", // The api route to get data from
 ```go
 error Post("", // The api route to post data to
     playlyfe.H{}, // The query params that you want to send to the route
-    Struct{},// The data you want to post to the api
+    struct{},// The data you want to post to the api
+    result interface{}, // The unmarshalled data
 )
 ```
 **Patch**
 ```go
-error Patch(
-    "" // The api route to patch data
+error Patch("" // The api route to patch data
     playlyfe.H{} // The query params that you want to send to the route
-    Struct{} ,// The data you want to post to the api
+    struct{} ,// The data you want to post to the api
     result interface{}, // The unmarshalled data
 )
 ```
@@ -121,7 +122,7 @@ error Patch(
 ```go
 error Put("" // The api route to put data
     playlyfe.H{}, // The query params that you want to send to the route
-    Struct{} ,// The data you want to post to the api
+    struct{} ,// The data you want to post to the api
     result interface{}, // The unmarshalled data
 )
 ```
@@ -151,17 +152,17 @@ A ```*PlaylyfeError``` is returned whenever an error from the PlaylyfeAPI occurs
 
 You have to type cast the error to a *PlaylyfeError first like this,
 ```go
-err := pl.Get("/player", H{"player_id": "student1"}, &player)
+err := pl.Get("/player", playlyfe.H{"player_id": "student1"}, &player)
 if pe, ok := err.(*PlaylyfeError); ok {
     return pe
 } else {
-    panicOnError(t, err)
+    panic(err) // do what needs to be done on this type of error
 }
 ```
 
 License
 =======
-Playlyfe Go SDK v0.0.1  
+Playlyfe Go SDK  
 http://dev.playlyfe.com/  
 Copyright(c) 2014-2015, Playlyfe IT Solutions Pvt. Ltd, support@playlyfe.com
 
