@@ -43,7 +43,7 @@ var johny Player
 
 func main() { 
     pl := playlyfe.NewClientV2("Your client id", "Your client secret", nil, nil)
-    err: = pl.Get("/runtime/player", playlyfe.H{"player_id": "johny"}, johny)  // To get player profile
+    err := pl.Get("/runtime/player", playlyfe.H{"player_id": "johny"}, johny)  // To get player profile
 }
 ```
 # Documentation
