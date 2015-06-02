@@ -1,4 +1,4 @@
-![Playlyfe Go SDK](./images/pl-go-sdk.png "Playlyfe Go SDK")
+![Playlyfe Go SDK](https://dev.playlyfe.com/images/assets/pl-go-sdk.png "Playlyfe Go SDK")
 
 Playlyfe Go SDK
 =================
@@ -6,27 +6,6 @@ Playlyfe Go SDK
 This is the official OAuth 2.0 Go or Golang client SDK for the Playlyfe API.
 It supports the `client_credentials` and `authorization code` OAuth 2.0 flows.
 For a complete API Reference checkout [Playlyfe Developers](https://dev.playlyfe.com/docs/api.html) for more information.
-
-Install
-----------
-```sh
-go get github.com/playlyfe/playlyfe-go-sdk
-```
-# Using
-### Create a client
-  If you haven't created a client for your game yet just head over to [Playlyfe](http://playlyfe.com) and login into your account, and go to the game settings and click on client
-
-  **1.Client Credentials Flow**
-    In the client page click on whitelabel client
-    ![Creating a Whitelabel Client](./images/client.png "Creating a Whitelabel Client")
-
-  **2.Authorization Code Flow**
-    In the client page click on backend client and specify the redirect uri this will be the url where you will be redirected to get the token
-    ![Creating a Backend Client](./images/auth.png "Creating a Backend Client")
-
-> Note: If you want to test the sdk in staging you can click the Test Client button.
-
-  And then note down the client id and client secret you will need it later for using it in the sdk
 
 # Examples
 The Playlyfe class allows you to make rest api calls like GET, POST, .. etc.  
@@ -46,15 +25,26 @@ func main() {
     err := pl.Get("/runtime/player", playlyfe.H{"player_id": "johny"}, johny)  // To get player profile
 }
 ```
-# Documentation
-You can initiate a client by giving the client_id and client_secret params
+
+# Install
+```sh
+go get github.com/playlyfe/playlyfe-go-sdk
+```
+# Using
+### Create a client
+  If you haven't created a client for your game yet just head over to [Playlyfe](http://playlyfe.com) and login into your account, and go to the game settings and click on client.
+
 ###1. Client Credentials Flow
+In the client page select Yes for both the first and second questions
+![client](https://cloud.githubusercontent.com/assets/1687946/7930229/2c2f14fe-0924-11e5-8c3b-5ba0c10f066f.png)
 ```go
 import "github.com/playlyfe/playlyfe-go-sdk"
 
 pl := playlyfe.NewClientV2("Your client id", "Your client secret", nil, nil)
 ```
 ###2. Authorization Code Flow
+In the client page select yes for the first question and no for the second
+![auth](https://cloud.githubusercontent.com/assets/1687946/7930231/2c31c1fe-0924-11e5-8cb5-73ca0a002bcb.png)
 ```go
 import "github.com/playlyfe/playlyfe-go-sdk"
 
@@ -73,10 +63,12 @@ store func(token string, expires_at int64) {
 }
 ```
 ## 3. Custom Login Flow using JWT(JSON Web Token)
+In the client page select no for the first question and yes for the second
+![jwt](https://cloud.githubusercontent.com/assets/1687946/7930230/2c2f2caa-0924-11e5-8dcf-aed914a9dd58.png)
 ```go
 import "github.com/playlyfe/playlyfe-go-sdk"
 
-token := playlyfe.createJWT("your client_id", "your client_secret", 
+token, err := playlyfe.createJWT("your client_id", "your client_secret", 
     "player_id", // The player id associated with your user
     []string{"player.runtime.read", "player.runtime.write"}, // The scopes the player has access to
     3600; // 1 hour expiry Time
