@@ -79,7 +79,7 @@ This is used to create jwt token which can be created when your user is authenti
 
 **API**
 ```go
-error api("GET", // The request method can be GET/POST/PUT/PATCH/DELETE
+error Api("GET", // The request method can be GET/POST/PUT/PATCH/DELETE
     "", // The api route to get data from
     playlyfe.H{}, // The query params that you want to send to the route
     struct{} ,// The data you want to post to the api
