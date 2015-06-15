@@ -17,6 +17,7 @@ const (
 
 type (
 	H map[string]interface{}
+	A []interface{}
 
 	Raw struct {
 		Data string
