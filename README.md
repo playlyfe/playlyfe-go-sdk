@@ -101,6 +101,7 @@ If access to a route is not allowed and then you make a request to that route th
 }
 ```
 
+# Methods
 **API**
 ```go
 error Api("GET", // The request method can be GET/POST/PUT/PATCH/DELETE
