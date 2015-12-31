@@ -12,12 +12,11 @@ func panicOnError(t *testing.T, err error) {
 	}
 }
 
-func getPlError(t *testing.T, err error) *PlaylyfeError {
-	if pe, ok := err.(*PlaylyfeError); ok {
+func getPlError(t *testing.T, err error) *Error {
+	if pe, ok := err.(*Error); ok {
 		return pe
-	} else {
-		panicOnError(t, err)
 	}
+	panicOnError(t, err)
 	return nil
 }
 
@@ -41,22 +40,22 @@ type Process struct {
 var player Player
 var players Players
 var resp interface{}
-var process, process_patched Process
+var process, processPatched Process
 
 func TestInvalidClient(t *testing.T) {
-	pl := NewClientV1("Zjc0MWU0N2MtODkzNS00ZWNmLWEwNmYtY2M1MGMxNGQ", "YNDQtNDMwMC00YTdkLWFiM2MtNTg0Y2ZkOThjYTZkMGIyNWVlNDAtNGJiMC0xMWU0LWI2NGEtYjlmMmFkYTdjOTI3", nil, nil)
+	pl := NewClientV2("Zjc0MWU0N2MtODkzNS00ZWNmLWEwNmYtY2M1MGMxNGQ", "YNDQtNDMwMC00YTdkLWFiM2MtNTg0Y2ZkOThjYTZkMGIyNWVlNDAtNGJiMC0xMWU0LWI2NGEtYjlmMmFkYTdjOTI3", nil, nil)
 	err := pl.Get("/player", H{"player_id": "student1"}, &player)
 	assert.Equal(t, getPlError(t, err).Name, "client_auth_fail")
 }
 
 func TestWrongRoute(t *testing.T) {
-	pl := NewClientV1("Zjc0MWU0N2MtODkzNS00ZWNmLWEwNmYtY2M1MGMxNGQ1YmQ4", "YzllYTE5NDQtNDMwMC00YTdkLWFiM2MtNTg0Y2ZkOThjYTZkMGIyNWVlNDAtNGJiMC0xMWU0LWI2NGEtYjlmMmFkYTdjOTI3", nil, nil)
+	pl := NewClientV2("Zjc0MWU0N2MtODkzNS00ZWNmLWEwNmYtY2M1MGMxNGQ1YmQ4", "YzllYTE5NDQtNDMwMC00YTdkLWFiM2MtNTg0Y2ZkOThjYTZkMGIyNWVlNDAtNGJiMC0xMWU0LWI2NGEtYjlmMmFkYTdjOTI3", nil, nil)
 	err := pl.Get("/qqq", H{"player_id": "student1"}, &player)
 	assert.Equal(t, getPlError(t, err).Name, "route_not_found")
 }
 
 func TestLoadStore(t *testing.T) {
-	pl := NewClientV1(
+	pl := NewClientV2(
 		"Zjc0MWU0N2MtODkzNS00ZWNmLWEwNmYtY2M1MGMxNGQ1YmQ4",
 		"YzllYTE5NDQtNDMwMC00YTdkLWFiM2MtNTg0Y2ZkOThjYTZkMGIyNWVlNDAtNGJiMC0xMWU0LWI2NGEtYjlmMmFkYTdjOTI3",
 		func() (token string, expires_at int64) {
@@ -68,13 +67,6 @@ func TestLoadStore(t *testing.T) {
 		},
 	)
 	pl.checkToken(H{})
-}
-
-func TestClientV1(t *testing.T) {
-	pl := NewClientV1("Zjc0MWU0N2MtODkzNS00ZWNmLWEwNmYtY2M1MGMxNGQ1YmQ4", "YzllYTE5NDQtNDMwMC00YTdkLWFiM2MtNTg0Y2ZkOThjYTZkMGIyNWVlNDAtNGJiMC0xMWU0LWI2NGEtYjlmMmFkYTdjOTI3", nil, nil)
-	err := pl.Get("/player", H{"player_id": "student1"}, &player)
-	panicOnError(t, err)
-	assert.Equal(t, player.ID, "student1", "")
 }
 
 func TestClientV2(t *testing.T) {
@@ -113,9 +105,9 @@ func TestClientV2(t *testing.T) {
 	process.ID = ""    // Clearing these fields
 	process.State = "" // Clearing these fields
 	process.Name = "patched_process"
-	pl.Patch("/runtime/processes/"+id, H{"player_id": "student1"}, process, &process_patched)
+	pl.Patch("/runtime/processes/"+id, H{"player_id": "student1"}, process, &processPatched)
 	panicOnError(t, err)
-	assert.Equal(t, process_patched.Name, "patched_process", "")
+	assert.Equal(t, processPatched.Name, "patched_process", "")
 	var msg struct {
 		Message string `json:"message"`
 	}
@@ -125,7 +117,7 @@ func TestClientV2(t *testing.T) {
 
 func TestRedirectURI(t *testing.T) {
 	pl := NewCodeV2("Zjc0MWU0N2MtODkzNS00ZWNmLWEwNmYtY2M1MGMxNGQ1YmQ4", "YzllYTE5NDQtNDMwMC00YTdkLWFiM2MtNTg0Y2ZkOThjYTZkMGIyNWVlNDAtNGJiMC0xMWU0LWI2NGEtYjlmMmFkYTdjOTI3", "http://localhost/code", nil, nil)
-	println(pl.GetLoginUrl())
+	println(pl.GetLoginURL())
 }
 
 func TestJWT(t *testing.T) {

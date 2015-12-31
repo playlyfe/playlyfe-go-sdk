@@ -10,66 +10,73 @@ import (
 )
 
 const (
-	authorizationUrl string = "https://playlyfe.com/auth"
-	tokenUrl         string = "https://playlyfe.com/auth/token"
-	apiBaseUrl       string = "https://api.playlyfe.com/"
+	authorizationURL string = "https://playlyfe.com/auth"
+	tokenURL         string = "https://playlyfe.com/auth/token"
+	apiBaseURL       string = "https://api.playlyfe.com/"
 )
 
 type (
+	// H is a simpler way to declare JSON objects
 	H map[string]interface{}
+
+	// A is a simpler way to declare JSON arrays
 	A []interface{}
 
-	Raw struct {
-		Data string
-	}
+	// Load callback is called when a new request is made
+	// you need to return the stored access token and it expiresAt time
+	Load func() (token string, expiresAt int64)
 
-	Load  func() (token string, expires_at int64)
-	Store func(token string, expires_at int64)
+	// Store callback is called when a token is requested
+	// you need to store the token and its expiresAt time
+	Store func(token string, expiresAt int64)
 
-	PlaylyfeError struct {
+	// Error is any error returned from the Playlyfe API
+	Error struct {
 		Name        string `json:"error"`
 		Description string `json:"error_description"`
 	}
 
+	// Playlyfe stores all information related to the client
 	Playlyfe struct {
-		client_id     string
-		client_secret string
-		client_type   string
-		version       string
-		redirect_uri  string
-		apiEndpoint   string
-		code          string
-		access_token  string
-		expires_at    int64
-		client        *gorequest.SuperAgent
-		load          Load
-		store         Store
+		clientID     string
+		clientSecret string
+		clientType   string
+		version      string
+		redirectURI  string
+		apiEndpoint  string
+		code         string
+		accessToken  string
+		expiresAt    int64
+		client       *gorequest.SuperAgent
+		load         Load
+		store        Store
 	}
 )
 
-func (self *PlaylyfeError) Error() string {
-	return self.Name + `: ` + self.Description
+func (e *Error) Error() string {
+	return e.Name + `: ` + e.Description
 }
 
-func New(client_id string, client_secret string, client_type string, version string, redirect_uri string, load Load, store Store) *Playlyfe {
+// New create a new playlyfe client
+func New(clientID string, clientSecret string, clientType string, version string, redirectURI string, load Load, store Store) *Playlyfe {
 	pl := &Playlyfe{
-		client_id:     client_id,
-		client_secret: client_secret,
-		client_type:   client_type,
-		version:       version,
-		redirect_uri:  redirect_uri,
-		client:        gorequest.New(),
-		apiEndpoint:   apiBaseUrl + version,
+		clientID:     clientID,
+		clientSecret: clientSecret,
+		clientType:   clientType,
+		version:      version,
+		redirectURI:  redirectURI,
+		client:       gorequest.New(),
+		apiEndpoint:  apiBaseURL + version,
 	}
 	if load == nil {
-		load = func() (token string, expires_at int64) {
-			return pl.access_token, pl.expires_at
+		load = func() (token string, expiresAt int64) {
+			return pl.accessToken, pl.expiresAt
 		}
 	}
 	if store == nil {
-		store = func(token string, expires_at int64) {
-			pl.access_token = token
-			pl.expires_at = expires_at
+		store = func(token string, expiresAt int64) {
+			pl.accessToken = token
+			pl.expiresAt = expiresAt
 		}
 	}
 	pl.load = load
@@ -77,25 +84,19 @@ func New(client_id string, client_secret string, client_type string, version str
 	return pl
 }
 
-func NewClientV2(client_id, client_secret string, load Load, store Store) *Playlyfe {
-	return New(client_id, client_secret, "client", "v2", "", load, store)
+// NewClientV2 creates a new playlyfe client with client crendentials flow
+func NewClientV2(clientID, clientSecret string, load Load, store Store) *Playlyfe {
+	return New(clientID, clientSecret, "client", "v2", "", load, store)
 }
 
-func NewClientV1(client_id, client_secret string, load Load, store Store) *Playlyfe {
-	return New(client_id, client_secret, "client", "v1", "", load, store)
+// NewCodeV2 creates a new playlyfe client with authorization code flow
+func NewCodeV2(clientID, clientSecret, redirectURI string, load Load, store Store) *Playlyfe {
+	return New(clientID, clientSecret, "code", "v2", redirectURI, load, store)
 }
 
-func NewCodeV2(client_id, client_secret, redirect_uri string, load Load, store Store) *Playlyfe {
-	return New(client_id, client_secret, "code", "v2", redirect_uri, load, store)
-}
-
-func NewCodeV1(client_id, client_secret, redirect_uri string, load Load, store Store) *Playlyfe {
-	return New(client_id, client_secret, "code", "v1", redirect_uri, load, store)
-}
-
-func (self *Playlyfe) checkPlError(body string) error {
+func (p *Playlyfe) checkPlError(body string) error {
 	if strings.Contains(body, `"error"`) {
-		var plError PlaylyfeError
+		var plError Error
 		err := json.Unmarshal([]byte(body), &plError)
 		if err != nil {
 			plError.Name = "invalid_body"
@@ -107,51 +108,52 @@ func (self *Playlyfe) checkPlError(body string) error {
 	return nil
 }
 
-func (self *Playlyfe) newJSONError() error {
-	return &PlaylyfeError{"invalid_body", "The Response Body could not be unmarshalled"}
+func (p *Playlyfe) newJSONError() error {
+	return &Error{"invalid_body", "The Response Body could not be unmarshalled"}
 }
 
-func (self *Playlyfe) getToken() (string, int64, error) {
-	var post_body string
-	if self.client_type == "client" {
-		post_body = `{"client_id":"` + self.client_id + `", "client_secret": "` + self.client_secret + `", "grant_type": "client_credentials"}`
+func (p *Playlyfe) getToken() (string, int64, error) {
+	var postBody string
+	if p.clientType == "client" {
+		postBody = `{"client_id":"` + p.clientID + `", "client_secret": "` + p.clientSecret + `", "grant_type": "client_credentials"}`
 	} else {
-		post_body = `{"client_id":"` + self.client_id + `", "client_secret": "` + self.client_secret + `", "redirect_uri": "` + self.redirect_uri + `", "code": "` + self.code + `", "grant_type": "authorization_code"}`
+		postBody = `{"client_id":"` + p.clientID + `", "client_secret": "` + p.clientSecret + `", "redirect_uri": "` + p.redirectURI + `", "code": "` + p.code + `", "grant_type": "authorization_code"}`
 	}
-	_, body, errs := self.client.Post(tokenUrl).Type("json").Send(post_body).End()
+	_, body, errs := p.client.Post(tokenURL).Type("json").Send(postBody).End()
 	if errs != nil {
 		return "", 0, errs[0]
 	}
-	plError := self.checkPlError(body)
+	plError := p.checkPlError(body)
 	if plError != nil {
 		return "", 0, plError
 	}
 	token := H{}
 	json.Unmarshal([]byte(body), &token)
-	expires_at := int64(token["expires_in"].(float64)) + time.Now().Unix()
-	return token["access_token"].(string), expires_at, nil
+	expiresAt := int64(token["expires_in"].(float64)) + time.Now().Unix()
+	return token["access_token"].(string), expiresAt, nil
 }
 
-func (self *Playlyfe) checkToken(query H) error {
+func (p *Playlyfe) checkToken(query H) error {
 	var err error
-	token, expires_at := self.load()
-	if token == "" || expires_at <= time.Now().Unix() {
-		token, expires_at, err = self.getToken()
+	token, expiresAt := p.load()
+	if token == "" || expiresAt <= time.Now().Unix() {
+		token, expiresAt, err = p.getToken()
 		if err != nil {
 			return err
 		}
-		self.store(token, expires_at)
+		p.store(token, expiresAt)
 	}
 	query["access_token"] = token
 	return nil
 }
 
-func (self *Playlyfe) Api(method string, route string, query H, postbody interface{}, result interface{}, raw bool) error {
+// API makes a an API request to the Playlyfe API
+func (p *Playlyfe) API(method string, route string, query H, postbody interface{}, result interface{}, raw bool) error {
 	var body string
 	var err error
 	var errs []error
-	var plError PlaylyfeError
-	err = self.checkToken(query)
+	var plError Error
+	err = p.checkToken(query)
 	if err != nil {
 		return err
 	}
@@ -159,20 +161,20 @@ func (self *Playlyfe) Api(method string, route string, query H, postbody interfa
 	for k, v := range query {
 		params.Add(k, v.(string))
 	}
-	api_route := self.apiEndpoint + route + "?" + params.Encode()
+	apiRoute := p.apiEndpoint + route + "?" + params.Encode()
 	switch method {
 	case "GET":
-		_, body, errs = self.client.Get(api_route).Query(query).End()
+		_, body, errs = p.client.Get(apiRoute).Query(query).End()
 	case "POST":
-		_, body, errs = self.client.Post(api_route).Query(query).Send(postbody).End()
+		_, body, errs = p.client.Post(apiRoute).Query(query).Send(postbody).End()
 	case "PATCH":
-		_, body, errs = self.client.Patch(api_route).Query(query).Send(postbody).End()
+		_, body, errs = p.client.Patch(apiRoute).Query(query).Send(postbody).End()
 	case "PUT":
-		_, body, errs = self.client.Put(api_route).Query(query).Send(postbody).End()
+		_, body, errs = p.client.Put(apiRoute).Query(query).Send(postbody).End()
 	case "DELETE":
-		_, body, errs = self.client.Delete(api_route).Query(query).End()
+		_, body, errs = p.client.Delete(apiRoute).Query(query).End()
 	default:
-		_, body, errs = self.client.Head(api_route).Query(query).End()
+		_, body, errs = p.client.Head(apiRoute).Query(query).End()
 	}
 	if errs != nil {
 		return errs[0]
@@ -180,70 +182,74 @@ func (self *Playlyfe) Api(method string, route string, query H, postbody interfa
 	if strings.Contains(body, `"error"`) {
 		err = json.Unmarshal([]byte(body), &plError)
 		if err != nil {
-			return self.newJSONError()
+			return p.newJSONError()
 		}
 		return &plError
+	}
+	if raw {
+		if str, ok := result.(*[]byte); ok {
+			*str = []byte(body)
+		}
 	} else {
-		if raw {
-			// Do nothing for now
-			// if str, ok := result.(*Raw); ok {
-			// 	str.Data = body
-			// }
-		} else {
-			err = json.Unmarshal([]byte(body), &result)
-			if err != nil {
-				return self.newJSONError()
-			}
+		err = json.Unmarshal([]byte(body), &result)
+		if err != nil {
+			return p.newJSONError()
 		}
 	}
 	return nil
 }
 
-func (self *Playlyfe) Get(route string, query H, result interface{}) error {
-	return self.Api("GET", route, query, nil, result, false)
+// Get makes a GET API request to the Playlyfe API
+func (p *Playlyfe) Get(route string, query H, result interface{}) error {
+	return p.API("GET", route, query, nil, result, false)
 }
 
-func (self *Playlyfe) GetRaw(route string, query H, result interface{}) error {
-	return self.Api("GET", route, query, nil, result, true)
+// GetRaw makes a GET API request to the Playlyfe API but returns the raw data
+// useful for images
+func (p *Playlyfe) GetRaw(route string, query H, result interface{}) error {
+	return p.API("GET", route, query, nil, result, true)
 }
 
-func (self *Playlyfe) Post(route string, query H, body interface{}, result interface{}) error {
-	return self.Api("POST", route, query, body, result, false)
+// Post makes a Post API request to the Playlyfe API
+func (p *Playlyfe) Post(route string, query H, body interface{}, result interface{}) error {
+	return p.API("POST", route, query, body, result, false)
 }
 
-func (self *Playlyfe) Patch(route string, query H, body interface{}, result interface{}) error {
-	return self.Api("PATCH", route, query, body, result, false)
+// Patch makes a PATCH API request to the Playlyfe API
+func (p *Playlyfe) Patch(route string, query H, body interface{}, result interface{}) error {
+	return p.API("PATCH", route, query, body, result, false)
 }
 
-func (self *Playlyfe) Put(route string, query H, body interface{}, result interface{}) error {
-	return self.Api("PUT", route, query, body, result, false)
+// Put makes a PUT API request to the Playlyfe API
+func (p *Playlyfe) Put(route string, query H, body interface{}, result interface{}) error {
+	return p.API("PUT", route, query, body, result, false)
 }
 
-func (self *Playlyfe) Delete(route string, query H, result interface{}) error {
-	return self.Api("DELETE", route, query, nil, result, false)
+// Delete makes a DELETE API request to the Playlyfe API
+func (p *Playlyfe) Delete(route string, query H, result interface{}) error {
+	return p.API("DELETE", route, query, nil, result, false)
 }
 
-func (self *Playlyfe) ExchangeCode(code string) {
-	self.code = code
+// ExchangeCode sets the code which you got from authorization code flow
+func (p *Playlyfe) ExchangeCode(code string) {
+	p.code = code
 }
 
-func (self *Playlyfe) GetLoginUrl() string {
+// GetLoginURL gets the logout url
+func (p *Playlyfe) GetLoginURL() string {
 	params := url.Values{}
 	params.Add("response_type", "code")
-	params.Add("redirect_uri", self.redirect_uri)
-	params.Add("client_id", self.client_id)
-	return authorizationUrl + "?" + params.Encode()
+	params.Add("redirect_uri", p.redirectURI)
+	params.Add("client_id", p.clientID)
+	return authorizationURL + "?" + params.Encode()
 }
 
-func (self *Playlyfe) GetLogoutUrl() string {
-	return ""
-}
-
-func CreateJWT(client_id, client_secret, player_id string, scopes []string, expiry time.Duration) (string, error) {
+// CreateJWT creates an new JWT Token which can be used with the Playlyfe API
+func CreateJWT(clientID, clientSecret, playerID string, scopes []string, expiry time.Duration) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
-	token.Claims["player_id"] = player_id
+	token.Claims["player_id"] = playerID
 	token.Claims["scopes"] = scopes
 	token.Claims["exp"] = time.Now().Add(time.Second * expiry).Unix()
-	tokenString, err := token.SignedString([]byte(client_secret))
-	return client_id + ":" + tokenString, err
+	tokenString, err := token.SignedString([]byte(clientSecret))
+	return clientID + ":" + tokenString, err
 }

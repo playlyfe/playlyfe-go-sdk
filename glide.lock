@@ -1,0 +1,29 @@
+hash: 7383c7739a26ed1088805c2c02978601d1df3ea3db4d71ff8bd1f8941e95b507
+updated: 2015-12-31T11:59:37.859132337+05:30
+imports:
+- name: github.com/davecgh/go-spew
+  version: 5215b55f46b2b919f50a1df0eaa5886afe4e3b3d
+  repo: https://github.com/davecgh/go-spew
+- name: github.com/dgrijalva/jwt-go
+  version: afef698c326bfd906b11659432544e5aae441d44
+- name: github.com/moul/http2curl
+  version: 1c29be06762e43e04dd954a01c66991104ce4374
+- name: github.com/parnurzeal/gorequest
+  version: 27bfb0dcbcc020d11b7839af416fb8dafc2ab01c
+- name: github.com/pmezard/go-difflib
+  version: e8554b8641db39598be7f6342874b958f12ae1d4
+  repo: https://github.com/pmezard/go-difflib
+- name: github.com/stretchr/objx
+  version: 1a9d0bb9f541897e62256577b352fdbc1fb4fd94
+  repo: https://github.com/stretchr/objx
+- name: github.com/stretchr/testify
+  version: e3a8ff8ce36581f87a15341206f205b1da467059
+  subpackages:
+  - assert
+- name: golang.org/x/crypto
+  version: f18420efc3b4f8e9f3d51f6bd2476e92c46260e9
+- name: golang.org/x/net
+  version: 0cb26f788dd4625d1956c6fd97ffc4c90669d129
+- name: golang.org/x/text
+  version: cf4986612c83df6c55578ba198316d1684a9a287
+devImports: []

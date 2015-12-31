@@ -1,0 +1,7 @@
+package: github.com/playlyfe/playlyfe-go-sdk
+import:
+- package: github.com/dgrijalva/jwt-go
+- package: github.com/parnurzeal/gorequest
+- package: github.com/stretchr/testify
+  subpackages:
+  - assert

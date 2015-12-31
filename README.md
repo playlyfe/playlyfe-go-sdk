@@ -104,7 +104,7 @@ If access to a route is not allowed and then you make a request to that route th
 # Methods
 **API**
 ```go
-error Api("GET", // The request method can be GET/POST/PUT/PATCH/DELETE
+error API("GET", // The request method can be GET/POST/PUT/PATCH/DELETE
     "", // The api route to get data from
     playlyfe.H{}, // The query params that you want to send to the route
     struct{} ,// The data you want to post to the api
@@ -150,9 +150,9 @@ error Delete("" // The api route to delete the component
     result interface{}, // The unmarshalled data
 )
 ```
-**Get Login Url**
+**Get Login URL**
 ```go
-GetLoginUrl() string
+GetLoginURL() string
 //This will return the url to which the user needs to be redirected for the user to login.
 ```
 
@@ -165,17 +165,21 @@ ExchangeCode(code string)
 ```
 
 **Errors**  
-A ```*PlaylyfeError``` is returned whenever an error from the PlaylyfeAPI occurs in each call.The Error contains a Name and Description field which can be used to determine the type of error that occurred.
+An ```*Error``` is returned whenever an error from the PlaylyfeAPI occurs in each call.The Error contains a Name and Description field which can be used to determine the type of error that occurred.
 
 You have to type cast the error to a *PlaylyfeError first like this,
 ```go
 err := pl.Get("/player", playlyfe.H{"player_id": "student1"}, &player)
-if pe, ok := err.(*PlaylyfeError); ok {
+if pe, ok := err.(*playlyfe.Error); ok {
     return pe
 } else {
     panic(err) // do what needs to be done on this type of error
 }
 ```
+
+
+You can read the docs at [GoDoc](https://godoc.org/github.com/playlyfe/playlyfe-go-sdk)
+
 
 License
 =======
