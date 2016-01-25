@@ -1,12 +1,18 @@
 package playlyfe
 
 import (
+	"bytes"
 	"encoding/json"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/parnurzeal/gorequest"
+	"io"
+	"io/ioutil"
+	"mime/multipart"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/parnurzeal/gorequest"
 )
 
 const (
@@ -252,4 +258,120 @@ func CreateJWT(clientID, clientSecret, playerID string, scopes []string, expiry 
 	token.Claims["exp"] = time.Now().Add(time.Second * expiry).Unix()
 	tokenString, err := token.SignedString([]byte(clientSecret))
 	return clientID + ":" + tokenString, err
+}
+
+// GraphQLClient stores all information related to the graphql client
+type GraphQLClient struct {
+	EndPoint   string
+	GameID     string
+	GameSecret string
+	Version    string
+	RuntimeID  string
+	Branch     string
+	PlayerID   string
+	HTTPClient *http.Client
+}
+
+// GraphQLFile represents a file which you would like to upload
+type GraphQLFile struct {
+	Name      string
+	FieldName string
+	Source    io.Reader
+}
+
+// GraphQLRequest represents single graphql request
+type GraphQLRequest struct {
+	Query     string
+	Variables map[string]interface{}
+	Operation string
+	Files     []*GraphQLFile
+}
+
+// CreateJWTGraphQL creates an new JWT Token which can be used with the Playlyfe GraphQL API
+func (pql *GraphQLClient) getToken() (string, error) {
+	token := jwt.New(jwt.SigningMethodHS256)
+	token.Claims["playerID"] = pql.PlayerID
+	token.Claims["runtimeID"] = pql.RuntimeID
+	token.Claims["branch"] = pql.Branch
+	token.Claims["versionID"] = pql.Version
+	// token.Claims["exp"] = time.Now().Add(time.Second * expiry).Unix()
+	tokenString, err := token.SignedString([]byte(pql.GameSecret))
+	return pql.GameID + ":" + tokenString, err
+}
+
+// Graphql Execute a graphql request
+func (pql *GraphQLClient) Do(greq GraphQLRequest) (result map[string]interface{}, err error) {
+	// Prepare a form that you will submit to that URL.
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	// Add your image file
+	if greq.Files != nil {
+		for _, file := range greq.Files {
+			var fw io.Writer
+			fw, err = w.CreateFormFile(file.FieldName, file.Name)
+			if err != nil {
+				return
+			}
+			if _, err = io.Copy(fw, file.Source); err != nil {
+				return
+			}
+		}
+	}
+	// Add the query field
+	err = w.WriteField("query", greq.Query)
+	if err != nil {
+		return
+	}
+
+	// Add the variables field
+	if greq.Variables != nil {
+		var data []byte
+		data, err = json.Marshal(greq.Variables)
+		if err != nil {
+			return
+		}
+		err = w.WriteField("variables", string(data))
+		if err != nil {
+			return
+		}
+	}
+
+	// Add the operation field
+	err = w.WriteField("operation", greq.Operation)
+	if err != nil {
+		return
+	}
+
+	// Don't forget to close the multipart writer.
+	// If you don't close it, your request will be missing the terminating boundary.
+	w.Close()
+
+	// Now that you have a form, you can submit it to your handler.
+	v := url.Values{}
+	token := ""
+	token, err = pql.getToken()
+	v.Set("access_token", token)
+	url := pql.EndPoint + "?" + v.Encode()
+	req, err := http.NewRequest("POST", url, &b)
+	if err != nil {
+		return
+	}
+	// Don't forget to set the content type, this will contain the boundary.
+	req.Header.Set("Content-Type", w.FormDataContentType())
+
+	// Submit the request
+	res, err := pql.HTTPClient.Do(req)
+	if err != nil {
+		return
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return
+	}
+	return
 }

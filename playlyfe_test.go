@@ -1,8 +1,11 @@
 package playlyfe
 
 import (
-	"github.com/stretchr/testify/assert"
+	"net/http"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func panicOnError(t *testing.T, err error) {
@@ -128,6 +131,24 @@ func TestJWT(t *testing.T) {
 		[]string{"player.runtime.read", "player.runtime.write"},
 		50,
 	)
-	println(token)
 	panicOnError(t, err)
+	parts := strings.Split(token, ":")
+	assert.Equal(t, parts[0], "Zjc0MWU0N2MtODkzNS00ZWNmLWEwNmYtY2M1MGMxNGQ1YmQ4")
+}
+
+func TestGraphQL(t *testing.T) {
+	client := &GraphQLClient{
+		EndPoint:   "http://localhost:3212/graphql",
+		GameID:     "demo",
+		GameSecret: "mysupersecretpassword",
+		RuntimeID:  "production",
+		Branch:     "master",
+		Version:    "latest",
+		PlayerID:   "admin",
+		HTTPClient: &http.Client{},
+	}
+	token, err := client.getToken()
+	panicOnError(t, err)
+	parts := strings.Split(token, ":")
+	assert.Equal(t, parts[0], "demo")
 }
