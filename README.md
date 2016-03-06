@@ -1,7 +1,6 @@
 ![Playlyfe Go SDK](https://dev.playlyfe.com/images/assets/pl-go-sdk.png "Playlyfe Go SDK")
 
-Playlyfe Go SDK
-=================
+# Playlyfe Go SDK [![Go Report Card](https://goreportcard.com/badge/github.com/playlyfe/playlyfe-go-sdk)](https://goreportcard.com/report/github.com/playlyfe/playlyfe-go-sdk) [![GoDoc](https://godoc.org/github.com/playlyfe/playlyfe-go-sdk?status.svg)](https://godoc.org/github.com/playlyfe/playlyfe-go-sdk) [![coverage](http://gocover.io/_badge/github.com/playlyfe/playlyfe-go-sdk)](https://gocover.io/github.com/playlyfe/playlyfe-go-sdk)
 
 This is the official OAuth 2.0 Go or Golang client SDK for the Playlyfe API.
 It supports the `client_credentials` and `authorization code` OAuth 2.0 flows.
